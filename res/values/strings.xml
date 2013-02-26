@@ -12,5 +12,6 @@
     <string name="Puntuaciones">Puntuaciones</string>
     <string name="hello_world">Hello world!</string>
     <string name="title_activity_puntuaciones">Puntuaciones</string>
+    <string name="title_activity_juego">Juego</string>
 
 </resources>
