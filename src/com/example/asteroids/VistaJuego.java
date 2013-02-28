@@ -12,6 +12,7 @@ import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.view.View;
 
+
 public class VistaJuego extends View {
 
     // //// ASTEROIDES //////
@@ -26,6 +27,14 @@ public class VistaJuego extends View {
     private int aceleracionNave;
     private static final int PASO_GIRO_NAVE = 5;
     private static final float PASO_ACELERACION_NAVE = 0.5f;
+    
+	 // //// THREAD Y TIEMPO //////
+	 // Thread encargado de procesar el juego
+	 private ThreadJuego thread = new ThreadJuego();
+	 // Cada cuanto queremos procesar cambios (ms)
+	 private static int PERIODO_PROCESO = 50;
+	 // Cuando se realizó el último proceso
+	 private long ultimoProceso = 0;
 
 //    //
 //    Path xA, xB;
@@ -73,6 +82,9 @@ public class VistaJuego extends View {
         	  } while(asteroide.distancia(nave) < (ancho+alto)/5);
           }
           
+          ultimoProceso = System.currentTimeMillis();
+          thread.start();
+          
           //
 //          xA.moveTo(0, alto);
 //          xA.lineTo(ancho,0);
@@ -82,7 +94,7 @@ public class VistaJuego extends View {
 
 
 
-    @Override protected void onDraw(Canvas canvas) 
+    @Override protected synchronized void onDraw(Canvas canvas) 
     {
           super.onDraw(canvas);
           //dibuja la nave
@@ -104,4 +116,44 @@ public class VistaJuego extends View {
 //          pincel.setStrokeWidth(1);
 //          pincel.setStyle(Style.FILL);
     }
+    
+    protected synchronized void actualizaFisica() 
+    {
+        long ahora = System.currentTimeMillis();
+        // No hagas nada si el período de proceso no se ha cumplido.
+        if (ultimoProceso + PERIODO_PROCESO > ahora) 
+        {
+              return;
+        }
+        // Para una ejecución en tiempo real calculamos retardo           
+        double retardo = (ahora - ultimoProceso) / PERIODO_PROCESO;
+        ultimoProceso = ahora; // Para la próxima vez
+        // Actualizamos velocidad y dirección de la nave a partir de 
+        // giroNave y aceleracionNave (según la entrada del jugador)
+        nave.setAngulo((int) (nave.getAngulo() + giroNave * retardo));
+        double nIncX = nave.getIncX() + aceleracionNave * Math.cos(Math.toRadians(nave.getAngulo())) * retardo;
+        double nIncY = nave.getIncY() + aceleracionNave * Math.sin(Math.toRadians(nave.getAngulo())) * retardo;
+        // Actualizamos si el módulo de la velocidad no excede el máximo
+        if (Math.hypot(nIncX,nIncY) <= Grafico.getMaxVelocidad())
+        {
+              nave.setIncX(nIncX);
+              nave.setIncY(nIncY);
+        }
+        // Actualizamos posiciones X e Y
+        nave.incrementaPos(retardo);
+        for (Grafico asteroide : Asteroides) {
+              asteroide.incrementaPos(retardo);
+        }
+    }
+    
+    class ThreadJuego extends Thread {
+    	   @Override
+    	   public void run() 
+    	   {
+    	          while (true) 
+    	          {
+    	                 actualizaFisica();
+    	          }
+    	   }
+    	}
 }
