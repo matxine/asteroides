@@ -12,6 +12,8 @@
     android:gravity="center"
 
     android:padding="30dip"
+    
+    android:background="@drawable/gradiente"
 
     tools:context=".Asteroides" >
 
